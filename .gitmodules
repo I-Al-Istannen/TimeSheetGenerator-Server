@@ -1,0 +1,3 @@
+[submodule "TimeSheetGenerator"]
+	path = TimeSheetGenerator
+	url = https://github.com/kit-sdq/TimeSheetGenerator
