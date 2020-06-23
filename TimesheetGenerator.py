@@ -2,6 +2,7 @@
 
 import json
 import socketserver
+import os
 import subprocess
 import sys
 import tempfile
@@ -16,8 +17,8 @@ import requests
 class Renderer:
 
     def __init__(self, path_to_generator: str):
-        self.logo_path = Path(path_to_generator) / "examples" / "Latex_Logo.pdf"
-        self.jar_path = Path(path_to_generator) / "target" / "Generator.jar"
+        self.logo_path = Path(path_to_generator) / "Latex_Logo.pdf"
+        self.jar_path = Path(path_to_generator) / "Generator.jar"
 
     def render_to_latex(self, global_json: str, month_json: str) -> Tuple[Optional[str], Optional[str]]:
         with tempfile.NamedTemporaryFile(mode="w+") as global_file:
@@ -32,18 +33,19 @@ class Renderer:
                         out = subprocess.check_output([
                             "java",
                             "-jar",
-                            "TimeSheetGenerator/target/TimeSheetGenerator-v0.2.2-jar-with-dependencies.jar",
+                            str(self.jar_path.resolve()),
                             "--file",
                             global_file.name,
                             month_file.name,
                             output_file.name
                         ])
                         if len(out) != 0:
-                            return (f"Trans lation failed: {str(out)}", None)
+                            return (f"Translation failed: {str(out)}", None)
 
                         with open(output_file.name, "r") as f:
                             return (None, f.read())
                     except subprocess.CalledProcessError as e:
+                        print("Command that failed was ", e.cmd)
                         return (f"Exit code {e.returncode}, message was {e.output}", None)
 
     def render_latex(self, latex: str) -> Union[bytes, str]:
@@ -58,7 +60,8 @@ class Renderer:
                 subprocess.check_output(
                     [
                         "latexmk",
-                        "-interaction=batchmode",
+                        "-pdf",
+                        "-interaction=nonstopmode",
                         str(tex_file_path.resolve())
                     ],
                     cwd=tmpdir_name,
@@ -79,14 +82,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-type", "text; charset=utf-8")
         self.end_headers()
 
-    def _send_error(self, text: str):
-        self.send_response(400)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-        self.wfile.write(text.encode("UTF-8"))
-        self.wfile.flush()
-
     def do_POST(self):
+        print("Handling post")
         content_len = int(self.headers.get('content-length', 0))
         data = json.loads(self.rfile.read(content_len))
 
@@ -115,7 +112,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def run(server_class=HTTPServer, handler_class=BaseHTTPRequestHandler, port=8080):
-    server_address = ('127.0.0.1', port)
+    server_address = ('0.0.0.0', port)
     httpd = server_class(server_address, handler_class)
     httpd.serve_forever()
 
@@ -126,6 +123,7 @@ def main(port: int, path_to_generator: str):
     if not Path(path_to_generator).exists():
         print("Generator path does not exist", file=sys.stderr)
         exit(1)
+    print("Running server on port", port)
     USED_RENDERER = Renderer(path_to_generator)
     run(HTTPServer, Handler, port)
 
