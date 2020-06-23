@@ -8,7 +8,8 @@ RUN useradd -m timesheet_generator
 
 RUN chown -R timesheet_generator:timesheet_generator /home/timesheet_generator
 
-COPY TimeSheetGenerator /home/timesheet_generator/TimesheetGenerator/
+COPY TimeSheetGenerator/Generator.jar /home/timesheet_generator/TimesheetGenerator/
+COPY TimeSheetGenerator/Latex_Logo.pdf /home/timesheet_generator/TimesheetGenerator/
 COPY TimesheetGenerator.py /home/timesheet_generator
 
 # Drop privs
