@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Generate KIT SDQ timesheets</title>
+    <style>
+      #errors {
+        display: none;
+        width: 100%;
+        border: 2px dashed red;
+      }
+      .wrapper {
+        margin: 0 auto;
+        max-width: 1200px;
+      }
+      textarea {
+        width: 100%;
+        height: 300px;
+      }
+    </style>
+  </head>
+  <body>
+    <article class="wrapper">
+      <div id="errors"></div>
+      <div>
+        <textarea id="global_json" placeholder="Global.json"></textarea>
+        <textarea id="month_json" placeholder="Month.json"></textarea>
+      </div>
+      <div>
+        <button id="submit_button">Submit!</button>
+      </div>
+    </article>
+
+    <script>
+      document.getElementById("submit_button").onclick = submit;
+
+      function download(filename, data_url) {
+        let element = document.createElement("a");
+        element.setAttribute("href", data_url);
+        element.setAttribute("download", filename);
+
+        element.style.display = "none";
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
+      }
+
+      async function submit() {
+        let global_text = document.getElementById("global_json").value;
+        let month_text = document.getElementById("month_json").value;
+
+        try {
+          let global = JSON.parse(global_text);
+          let month = JSON.parse(month_text);
+
+          const url = "http://localhost:8888";
+          fetch(url, {
+            method: "POST",
+            body: JSON.stringify({
+              global_json: JSON.stringify(global),
+              month_json: JSON.stringify(month),
+            }),
+          })
+            .then((response) => {
+              if (response.status !== 200) {
+                return Promise.reject(response.text());
+              }
+
+              return response.blob();
+            })
+            .then((blob) => {
+              const reader = new FileReader();
+              reader.addEventListener("loadend", () => {
+                download("Stundenzettel.pdf", reader.result);
+              });
+              reader.readAsDataURL(blob);
+            })
+            .catch((e) => {
+              if (e instanceof Promise) {
+                e.then((it) => {
+                  let errors = document.getElementById("errors");
+                  errors.innerHTML = it;
+                  errors.style.display = "block";
+                  errors.scrollIntoView();
+                });
+              } else {
+                alert(e);
+              }
+            });
+        } catch (e) {
+          alert(e);
+        }
+      }
+    </script>
+  </body>
+</html>
