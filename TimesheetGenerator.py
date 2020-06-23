@@ -131,4 +131,4 @@ def main(port: int, path_to_generator: str):
 
 
 if __name__ == '__main__':
-    main(int(sys.argv[1]), sys.argv[2])
+    main(int(sys.argv[2]), sys.argv[1])
