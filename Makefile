@@ -1,7 +1,7 @@
 all: docker
 
 TimeSheetGenerator:
-	git clone https://github.com/kit-sdq/TimeSheetGenerator
+	git clone https://github.com/I-Al-Istannen/TimeSheetGenerator
 
 TimeSheetGenerator/Generator.jar: TimeSheetGenerator
 	cd TimeSheetGenerator && mvn clean package
